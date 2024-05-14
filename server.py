@@ -38,6 +38,9 @@ def write_405_header()->bytes:
 def serve_client(sock:socket.socket):
     buf = sock.recv(BUFFER_SIZE).decode()
     method = parse_method(buf)
+    path = parse_path(buf)
+
+    print(f"[{threading.current_thread().name}]: {method} {path}")
 
     # This server does not allow any HTTP methods other than GET
     if method != "GET":
@@ -46,7 +49,6 @@ def serve_client(sock:socket.socket):
         sock.close()
         return
 
-    path = parse_path(buf)
     # we replace '/' with '/index.html', because browsers are weird
     if path == "/":
         path += "index.html"
