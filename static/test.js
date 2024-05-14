@@ -1,0 +1,1 @@
+console.log("Il caricamento di file statici avviene con successo")
