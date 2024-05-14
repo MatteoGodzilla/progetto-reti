@@ -12,35 +12,35 @@ ADDRESS = ("localhost", 1234)
 # Maximum size in bytes that can be read at once from the client
 BUFFER_SIZE = 4096
 
-# --- HTTP Utility classes ---
+# --- HTTP Utility methods ---
 # Request
-def parse_method(request:str)->str:
+def parse_method(request:str) -> str:
     return request.split(" ")[0]
 
-def parse_path(request:str)->str:
+def parse_path(request:str) -> str:
     return request.split(" ")[1]
 
 # Response
-def write_200_header()->bytes:
+def write_200_header() -> bytes:
     res = "HTTP/1.1 200 OK\r\n\r\n"
     return res.encode()
 
-def write_404_header()->bytes:
+def write_404_header() -> bytes:
     res = "HTTP/1.1 404 Not Found\r\n\r\n"
     return res.encode()
 
-def write_405_header()->bytes:
+def write_405_header() -> bytes:
     res = "HTTP/1.1 405 Method Not Allowed\r\n\r\n"
     return res.encode()
 
 # --- Server logic ---
 
-def serve_client(sock:socket.socket):
+def serve_client(sock:socket.socket) -> None:
     buf = sock.recv(BUFFER_SIZE).decode()
     method = parse_method(buf)
     path = parse_path(buf)
 
-    print(f"[{threading.current_thread().name}]: {method} {path}")
+    print(f"  [{threading.current_thread().name}]: {method} {path}")
 
     # This server does not allow any HTTP methods other than GET
     if method != "GET":
@@ -56,7 +56,7 @@ def serve_client(sock:socket.socket):
     file_path = ROOT + path
 
     if not os.path.isfile(file_path):
-        print(f"[{threading.current_thread().name}]: Could not load file at {file_path}")
+        print(f"  [{threading.current_thread().name}]: Could not load file at {file_path}")
         sock.send(write_404_header())
         sock.send(f"{path}: File not found".encode())
         sock.close()
@@ -68,12 +68,12 @@ def serve_client(sock:socket.socket):
         sock.send(bytes)
         sock.close()
 
-def start_server():
+def start_server() -> None:
     # Creates a TCP socket
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server:
         try:
             server.bind(ADDRESS)
-            print(f"Server listening at {server.getsockname()} ({ROOT})")
+            print(f"Server listening at {server.getsockname()} [{ROOT}]")
             server.listen()
 
             while True:
@@ -82,7 +82,7 @@ def start_server():
                 print(f"Received Connection: {info}")
                 # Create new thread to serve the client
                 t = threading.Thread(target=serve_client, args=(sock,))
-                print(f"    Creating new thread with id: {t.name}")
+                print(f"  Creating new thread with id: {t.name}")
                 t.start()
         except OSError as e:
             print(f"Could not bind socket to address {ADDRESS}")
@@ -90,7 +90,7 @@ def start_server():
         except KeyboardInterrupt:
             print(" Closing down server...")
 
-def usage():
+def usage() -> None:
     print("Options available:")
     print("-h, --help: shows this help message")
     print(f"-a ADDRESS, --address=ADDRESS: specify the address used for this server. Default is {ADDRESS[0]}")
@@ -98,8 +98,7 @@ def usage():
     print(f"-r ROOT, --root=ROOT: specify where the root folder for serving files is located in the filesystem. Default is {ROOT}")
     sys.exit(1) # We force close the application as to not start the server
 
-# This CLI parsing should really be replaced with a proper library
-def parse_cli_args():
+def parse_cli_args() -> None:
     if len(sys.argv) == 1:
         # The user did not specify any parameter, so there's nothing to do
         return
@@ -131,10 +130,7 @@ def parse_cli_args():
             tokens = val.split("=")
             ROOT = tokens[1]
 
-def main():
+if __name__ == "__main__":
     parse_cli_args()
     start_server()
-
-if __name__ == "__main__":
-    main()
 
