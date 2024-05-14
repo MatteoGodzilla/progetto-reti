@@ -54,9 +54,9 @@ def serve_client(sock:socket.socket):
     file_path = ROOT + path
 
     if not os.path.isfile(file_path):
-        print(threading.current_thread().name, "Could not load file at ", path)
+        print(f"[{threading.current_thread().name}]: Could not load file at {file_path}")
         sock.send(write_404_header())
-        sock.send((path + ": File not found").encode())
+        sock.send(f"{path}: File not found".encode())
         sock.close()
         return # early exit from this function
 
@@ -71,19 +71,19 @@ def start_server():
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server:
         try:
             server.bind(ADDRESS)
-            print("Server listening at", server.getsockname())
+            print(f"Server listening at {server.getsockname()} ({ROOT})")
             server.listen()
 
             while True:
                 # Receive a single connection
                 sock, info = server.accept()
-                print("Received Connection:", info)
+                print(f"Received Connection: {info}")
                 # Create new thread to serve the client
                 t = threading.Thread(target=serve_client, args=(sock,))
-                print("    Creating new thread with id:", t.name)
+                print(f"    Creating new thread with id: {t.name}")
                 t.start()
         except OSError as e:
-            print("Could not bind socket to address", ADDRESS)
+            print(f"Could not bind socket to address {ADDRESS}")
             print(e)
         except KeyboardInterrupt:
             print(" Closing down server...")
@@ -91,8 +91,9 @@ def start_server():
 def usage():
     print("Options available:")
     print("-h, --help: shows this help message")
-    print("-a ADDRESS, --address=ADDRESS: overrides the address used for this server. Default is", ADDRESS[0])
-    print("-p PORT, --port=PORT: overrides the port used for this server. Default is", ADDRESS[1])
+    print(f"-a ADDRESS, --address=ADDRESS: specify the address used for this server. Default is {ADDRESS[0]}")
+    print(f"-p PORT, --port=PORT: specify the port used for this server. Default is {ADDRESS[1]}")
+    print(f"-r ROOT, --root=ROOT: specify where the root folder for serving files is located in the filesystem. Default is {ROOT}")
     sys.exit(1) # We force close the application as to not start the server
 
 # This CLI parsing should really be replaced with a proper library
@@ -104,6 +105,7 @@ def parse_cli_args():
     # We have to tell python that we want to modify the variable that already exists
     # instead of creating a local variable
     global ADDRESS
+    global ROOT
     argc = len(sys.argv)
     for i, val in enumerate(sys.argv):
         if val == "-h" or val == "--help":
@@ -120,7 +122,12 @@ def parse_cli_args():
         if val.startswith("--port="):
             tokens = val.split("=")
             ADDRESS = (ADDRESS[0], int(tokens[1]))
-
+        # Root
+        if val == "-r" and i + 1 < argc:
+            ROOT = sys.argv[i+1]
+        if val.startswith("--root="):
+            tokens = val.split("=")
+            ROOT = tokens[1]
 
 def main():
     parse_cli_args()
