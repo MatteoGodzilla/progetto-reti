@@ -29,6 +29,10 @@ def write_404_header()->bytes:
     res = "HTTP/1.1 404 Not Found\r\n\r\n"
     return res.encode()
 
+def write_405_header()->bytes:
+    res = "HTTP/1.1 405 Method Not Allowed\r\n\r\n"
+    return res.encode()
+
 # --- Server logic ---
 
 def serve_client(sock:socket.socket):
@@ -37,8 +41,8 @@ def serve_client(sock:socket.socket):
 
     # This server does not allow any HTTP methods other than GET
     if method != "GET":
-        sock.send(write_404_header())
-        sock.send("Only GET method is supported\n")
+        sock.send(write_405_header())
+        sock.send("Only GET method is supported\n".encode())
         sock.close()
         return
 
