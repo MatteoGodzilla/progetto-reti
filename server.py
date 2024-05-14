@@ -1,7 +1,7 @@
-from io import TextIOWrapper
 import socket
 import threading
 import os
+import sys
 
 # --- Global variables ---
 # relative path to where the static files are contained
@@ -71,7 +71,7 @@ def serve_client(sock:socket.socket):
     finally:
         sock.close()
 
-def main():
+def start_server():
     # Creates a TCP socket
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server:
         try:
@@ -81,17 +81,55 @@ def main():
 
             while True:
                 # Receive a single connection
-                sock,info = server.accept()
+                sock, info = server.accept()
                 print("Received Connection:", info)
                 # Create new thread to serve the client
                 t = threading.Thread(target=serve_client, args=(sock,))
                 print("    Creating new thread with id:", t.name)
                 t.start()
         except OSError as e:
-            print("Could not bind socket to address",ADDRESS)
+            print("Could not bind socket to address", ADDRESS)
             print(e)
         except KeyboardInterrupt:
             print(" Closing down server...")
+
+def usage():
+    print("Options available:")
+    print("-h, --help: shows this help message")
+    print("-a ADDRESS, --address=ADDRESS: overrides the address used for this server. Default is", ADDRESS[0])
+    print("-p PORT, --port=PORT: overrides the port used for this server. Default is", ADDRESS[1])
+    sys.exit(1) # We force close the application as to not start the server
+
+# This CLI parsing should really be replaced with a proper library
+def parse_cli_args():
+    if len(sys.argv) == 1:
+        # The user did not specify any parameter, so there's nothing to do
+        return
+
+    # We have to tell python that we want to modify the variable that already exists
+    # instead of creating a local variable
+    global ADDRESS
+    argc = len(sys.argv)
+    for i, val in enumerate(sys.argv):
+        if val == "-h" or val == "--help":
+            usage()
+        # Ip address
+        if val == "-a" and i + 1 < argc:
+            ADDRESS = (sys.argv[i+1], ADDRESS[1])
+        if val.startswith("--address="):
+            tokens = val.split("=")
+            ADDRESS = (tokens[1], ADDRESS[1])
+        # Port
+        if val == "-p" and i + 1 < argc:
+            ADDRESS = (ADDRESS[0], int(sys.argv[i+1]))
+        if val.startswith("--port="):
+            tokens = val.split("=")
+            ADDRESS = (ADDRESS[0], int(tokens[1]))
+
+
+def main():
+    parse_cli_args()
+    start_server()
 
 if __name__ == "__main__":
     main()
