@@ -56,19 +56,10 @@ def serve_client(sock:socket.socket):
         sock.close()
         return # early exit from this function
 
-    try:
-        # We try first if it's a text file
-        with open(file_path,"r") as f:
-            text = f.read()
-            sock.send(write_200_header())
-            sock.send(text.encode())
-    except UnicodeDecodeError:
-        # If it's not a text file, send it as a binary file
-        with open(file_path,"br") as f:
-            binary = f.read()
-            sock.send(write_200_header())
-            sock.send(binary)
-    finally:
+    with open(file_path,"br") as f:
+        bytes = f.read()
+        sock.send(write_200_header())
+        sock.send(bytes)
         sock.close()
 
 def start_server():
